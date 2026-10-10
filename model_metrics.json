@@ -1,0 +1,58 @@
+{
+  "validation_benchmarks": {
+    "Logistic Regression": {
+      "Accuracy": 0.9647058823529412,
+      "Precision": 1.0,
+      "Recall (Sensitivity)": 0.90625,
+      "Specificity": 1.0,
+      "F1-Score": 0.9508196721311475,
+      "ROC-AUC": 0.9964622641509434,
+      "MCC": 0.926121424467193,
+      "Cohen's Kappa": 0.9234004205467107
+    },
+    "Random Forest": {
+      "Accuracy": 0.9529411764705882,
+      "Precision": 1.0,
+      "Recall (Sensitivity)": 0.875,
+      "Specificity": 1.0,
+      "F1-Score": 0.9333333333333333,
+      "ROC-AUC": 0.9941037735849056,
+      "MCC": 0.9019958376999697,
+      "Cohen's Kappa": 0.8972188633615478
+    },
+    "XGBoost (Baseline)": {
+      "Accuracy": 0.9647058823529412,
+      "Precision": 1.0,
+      "Recall (Sensitivity)": 0.90625,
+      "Specificity": 1.0,
+      "F1-Score": 0.9508196721311475,
+      "ROC-AUC": 0.9935141509433962,
+      "MCC": 0.926121424467193,
+      "Cohen's Kappa": 0.9234004205467107
+    },
+    "XGBoost (Tuned)": {
+      "Accuracy": 0.9647058823529412,
+      "Precision": 1.0,
+      "Recall (Sensitivity)": 0.90625,
+      "Specificity": 1.0,
+      "F1-Score": 0.9508196721311475,
+      "ROC-AUC": 0.9929245283018868,
+      "MCC": 0.926121424467193,
+      "Cohen's Kappa": 0.9234004205467107
+    }
+  },
+  "tuned_xgboost_test_metrics": {
+    "Accuracy": 0.9767441860465116,
+    "Precision": 1.0,
+    "Recall (Sensitivity)": 0.9375,
+    "Specificity": 1.0,
+    "F1-Score": 0.967741935483871,
+    "ROC-AUC": 1.0,
+    "MCC": 0.9507985365695811,
+    "Cohen's Kappa": 0.9495896834701055
+  },
+  "perturbation_robustness": {
+    "mean_spearman_rho": 0.9881201334816463,
+    "mean_top5_jaccard": 1.0
+  }
+}

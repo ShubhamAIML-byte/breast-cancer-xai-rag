@@ -1,0 +1,31 @@
+Feature,Mean_Absolute_SHAP
+mean concave points,0.98692614
+worst perimeter,0.8151563
+worst concave points,0.76644176
+worst radius,0.6718137
+worst texture,0.64972436
+area error,0.5544769
+worst concavity,0.5467633
+mean texture,0.4128115
+mean smoothness,0.3052011
+compactness error,0.29146492
+mean compactness,0.26850402
+worst area,0.24451606
+worst symmetry,0.2150224
+worst smoothness,0.20127574
+radius error,0.16718121
+mean area,0.16314127
+symmetry error,0.08422215
+concavity error,0.07727858
+concave points error,0.045071203
+mean fractal dimension,0.038199153
+mean concavity,0.0350081
+mean radius,0.025135132
+worst compactness,0.021578597
+fractal dimension error,0.019660776
+mean symmetry,0.0
+mean perimeter,0.0
+perimeter error,0.0
+texture error,0.0
+smoothness error,0.0
+worst fractal dimension,0.0

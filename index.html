@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Explainable Breast Cancer AI | XGBoost + SHAP + RAG + LLM</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .glass-card { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+  <!-- TOP NAVBAR -->
+  <header class="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-50 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-blue-600 p-2 rounded-lg text-white">
+          <i data-lucide="activity" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-bold tracking-tight">BreastPath AI</h1>
+          <p class="text-xs text-slate-400 hidden sm:block">Explainable Breast Cancer Classification (XGBoost + SHAP + RAG + LLM)</p>
+        </div>
+      </div>
+      <div class="flex items-center space-x-2 sm:space-x-3 text-xs">
+        <span class="bg-blue-900/80 text-blue-300 px-2.5 py-1 rounded-full border border-blue-700/50 font-medium">XGBoost 3.4</span>
+        <span class="bg-purple-900/80 text-purple-300 px-2.5 py-1 rounded-full border border-purple-700/50 font-medium">TreeSHAP</span>
+        <span class="bg-emerald-900/80 text-emerald-300 px-2.5 py-1 rounded-full border border-emerald-700/50 font-medium">ChromaDB RAG</span>
+        <span class="bg-amber-900/80 text-amber-300 px-2.5 py-1 rounded-full border border-amber-700/50 font-medium">GPT-4o</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTAINER -->
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+    
+    <!-- HEADER SUBTITLE -->
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-slate-900">Clinical Decision Support & Explainability Dashboard</h2>
+        <p class="text-sm text-slate-500">Fine-needle aspirate (FNA) diagnostic reasoning combining game-theoretic attributions with cytopathology literature.</p>
+      </div>
+      <div class="flex items-center space-x-2">
+        <span class="inline-flex items-center text-xs font-semibold px-3 py-1.5 rounded-full bg-emerald-100 text-emerald-800">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 mr-2 animate-pulse"></span>
+          24/7 Serverless Live
+        </span>
+      </div>
+    </div>
+
+    <!-- MAIN TWO-COLUMN GRID -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+      <!-- LEFT COLUMN: Patient Selection & Inputs (4 cols) -->
+      <div class="lg:col-span-4 space-y-5">
+        
+        <!-- Case Selector Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <label class="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-2">
+            Select Test Patient Case (Held-Out Test Set)
+          </label>
+          <select id="caseSelector" class="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-sm font-medium text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none mb-3">
+            <option value="">Loading test cases...</option>
+          </select>
+          
+          <button id="btnRunDiagnosis" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg text-sm flex items-center justify-center space-x-2 transition shadow-sm">
+            <i data-lucide="play" class="w-4 h-4"></i>
+            <span>Run Diagnosis & XAI Analysis</span>
+          </button>
+        </div>
+
+        <!-- Selected Case Feature Summary Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5">
+          <div class="flex items-center justify-between mb-3">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-slate-600">Nuclear Morphometry (30 Features)</h3>
+            <span id="featureCountBadge" class="text-xs text-slate-400 font-mono">30 attributes</span>
+          </div>
+          
+          <div id="featureScrollList" class="max-h-72 overflow-y-auto space-y-2 text-xs pr-1">
+            <p class="text-slate-400 italic">Select a case to inspect cell nucleus measurements...</p>
+          </div>
+        </div>
+
+        <!-- Academic / Clinical Disclaimer -->
+        <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs text-amber-800 flex items-start space-x-2.5">
+          <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-600 shrink-0 mt-0.5"></i>
+          <div>
+            <strong class="font-semibold block mb-0.5">Academic Research Prototype</strong>
+            This system demonstrates explainable machine learning and RAG clinical reasoning. It is designed for clinical decision-support research and must not be used as an independent primary diagnostic tool.
+          </div>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: Diagnostic Results & XAI Reasoning (8 cols) -->
+      <div class="lg:col-span-8 space-y-5">
+        
+        <!-- TOP DIAGNOSTIC BANNER -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
+            
+            <!-- Diagnosis Badge -->
+            <div>
+              <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Predicted Diagnosis</span>
+              <div id="diagnosisBadge" class="inline-flex items-center px-4 py-2 rounded-lg text-lg font-bold bg-slate-100 text-slate-600 border border-slate-200">
+                Awaiting Analysis
+              </div>
+              <div id="actualDiagnosisText" class="text-xs text-slate-500 mt-1.5 font-medium"></div>
+            </div>
+
+            <!-- Malignant Probability Meter -->
+            <div class="sm:border-l sm:border-slate-100 sm:pl-6">
+              <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">Malignancy Risk Probability</span>
+              <div class="flex items-baseline space-x-2 mb-1.5">
+                <span id="probPercentText" class="text-2xl font-bold text-slate-900">--%</span>
+                <span id="confidenceText" class="text-xs text-slate-500 font-medium">Confidence: --%</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2.5 overflow-hidden">
+                <div id="probBar" class="bg-blue-600 h-2.5 rounded-full transition-all duration-700" style="width: 0%"></div>
+              </div>
+            </div>
+
+            <!-- Log-Odds Additivity Info -->
+            <div class="sm:border-l sm:border-slate-100 sm:pl-6 text-xs text-slate-600 space-y-1">
+              <span class="font-semibold text-slate-400 uppercase tracking-wider block mb-1">SHAP Margin Space</span>
+              <div>Base Value (E[f(x)]): <strong id="baseLogOdds" class="font-mono text-slate-800">--</strong></div>
+              <div>Final Margin (f(x)): <strong id="sampleLogOdds" class="font-mono text-slate-800">--</strong></div>
+              <div class="text-[11px] text-slate-400 font-mono">P(y=1) = σ(f(x))</div>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- TABS CONTAINER -->
+        <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          
+          <!-- Tab Navigation Headers -->
+          <div class="border-b border-slate-200 bg-slate-50/70 px-4 flex flex-wrap gap-1">
+            <button class="tab-btn active px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 border-blue-600 text-blue-600 transition flex items-center space-x-2" data-tab="tab-shap">
+              <i data-lucide="bar-chart-2" class="w-4 h-4"></i>
+              <span>SHAP Feature Impacts</span>
+            </button>
+            <button class="tab-btn px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center space-x-2" data-tab="tab-rag">
+              <i data-lucide="book-open" class="w-4 h-4"></i>
+              <span>ChromaDB RAG Guidelines</span>
+            </button>
+            <button class="tab-btn px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center space-x-2" data-tab="tab-explanation">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              <span>GenAI Explanation</span>
+            </button>
+            <button class="tab-btn px-4 py-3 text-xs sm:text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition flex items-center space-x-2" data-tab="tab-chat">
+              <i data-lucide="message-square" class="w-4 h-4"></i>
+              <span>Interactive Q&A Chat</span>
+            </button>
+          </div>
+
+          <!-- TAB 1: SHAP CHART -->
+          <div id="tab-shap" class="tab-content p-6">
+            <div class="flex items-center justify-between mb-4">
+              <div>
+                <h4 class="text-sm font-bold text-slate-900">Local Shapley Feature Contributions (TreeSHAP)</h4>
+                <p class="text-xs text-slate-500">Positive values (red) increase malignancy risk; negative values (blue) support benign classification.</p>
+              </div>
+            </div>
+            <div class="h-72 w-full">
+              <canvas id="shapChart"></canvas>
+            </div>
+          </div>
+
+          <!-- TAB 2: CHROMA DB RAG GUIDELINES -->
+          <div id="tab-rag" class="tab-content p-6 hidden">
+            <h4 class="text-sm font-bold text-slate-900 mb-1">Retrieved Cytopathology Knowledge (WHO & IAC Yokohama Guidelines)</h4>
+            <p class="text-xs text-slate-500 mb-4">Semantically retrieved from the clinical vector store to explain the biological pathology behind the top SHAP features.</p>
+            <div id="ragGuidelinesContainer" class="space-y-3">
+              <p class="text-slate-400 text-xs italic">Run diagnosis to retrieve matching cytopathology guidelines...</p>
+            </div>
+          </div>
+
+          <!-- TAB 3: GENERATIVE AI EXPLANATION -->
+          <div id="tab-explanation" class="tab-content p-6 hidden">
+            <div class="flex items-center justify-between mb-4">
+              <h4 class="text-sm font-bold text-slate-900">Natural-Language Clinical Explanation</h4>
+              <button id="btnRegenLLM" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-1.5">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+                <span>Regenerate with LLM</span>
+              </button>
+            </div>
+            <div id="explanationText" class="prose prose-sm max-w-none text-xs sm:text-sm text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-lg border border-slate-200">
+              <p class="text-slate-400 italic">Analysis required to display evidence-grounded explanation.</p>
+            </div>
+          </div>
+
+          <!-- TAB 4: INTERACTIVE Q&A CHAT -->
+          <div id="tab-chat" class="tab-content p-6 hidden">
+            <h4 class="text-sm font-bold text-slate-900 mb-1">Grounded Conversational Follow-Up</h4>
+            <p class="text-xs text-slate-500 mb-4">Ask questions about this patient's prediction, nuclear features, or retrieved guidelines.</p>
+            
+            <div id="chatMessages" class="bg-slate-50 border border-slate-200 rounded-lg p-4 h-64 overflow-y-auto space-y-3 mb-3 text-xs">
+              <div class="bg-blue-50 text-blue-900 p-2.5 rounded-lg border border-blue-200 inline-block max-w-md">
+                <strong>BreastPath Assistant:</strong> Hello! Once you analyze a patient, you can ask questions like:
+                <ul class="list-disc pl-4 mt-1 space-y-0.5">
+                  <li>"Why was this case classified as malignant?"</li>
+                  <li>"What was the impact of concave points?"</li>
+                  <li>"What do WHO guidelines say about nuclear perimeter?"</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="flex gap-2">
+              <input type="text" id="chatInput" placeholder="Ask a question about this patient's prediction..." class="flex-1 bg-white border border-slate-300 rounded-lg px-3.5 py-2 text-xs text-slate-800 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+              <button id="btnSendChat" class="bg-blue-600 hover:bg-blue-700 text-white font-medium px-4 py-2 rounded-lg text-xs transition flex items-center space-x-1">
+                <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                <span>Ask</span>
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-slate-200 py-4 mt-8 text-center text-xs text-slate-500">
+    Explainable Breast Cancer Classification (WDBC) &bull; M.Tech Research Project &bull; XGBoost 3.4 + TreeSHAP + ChromaDB RAG + LLM
+  </footer>
+
+  <!-- JAVASCRIPT APP LOGIC -->
+  <script>
+    let currentPayload = null;
+    let sampleCases = [];
+    let shapChartInstance = null;
+    let chatHistory = [];
+
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // Tab Navigation Logic
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => {
+          b.classList.remove('active', 'border-blue-600', 'text-blue-600');
+          b.classList.add('border-transparent', 'text-slate-500');
+        });
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+
+        btn.classList.add('active', 'border-blue-600', 'text-blue-600');
+        btn.classList.remove('border-transparent', 'text-slate-500');
+        const target = btn.getAttribute('data-tab');
+        document.getElementById(target).classList.remove('hidden');
+      });
+    });
+
+    // Fetch Samples from Backend
+    async function loadSamples() {
+      try {
+        const res = await fetch('/api/samples');
+        if (!res.ok) throw new Error("Could not fetch samples");
+        sampleCases = await res.json();
+        
+        const selector = document.getElementById('caseSelector');
+        selector.innerHTML = '';
+        sampleCases.forEach((c, idx) => {
+          const opt = document.createElement('option');
+          opt.value = idx;
+          opt.textContent = `Test Case #${c.index} [Actual: ${c.actual_diagnosis.toUpperCase()}]`;
+          selector.appendChild(opt);
+        });
+        
+        if (sampleCases.length > 0) {
+          renderFeatureList(sampleCases[0].features);
+          // Automatically run analysis on the first sample
+          runAnalysis(sampleCases[0].features, sampleCases[0]);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function renderFeatureList(features) {
+      const container = document.getElementById('featureScrollList');
+      container.innerHTML = '';
+      for (const [k, v] of Object.entries(features)) {
+        const row = document.createElement('div');
+        row.className = 'flex justify-between items-center py-1 border-b border-slate-100';
+        row.innerHTML = `<span class="text-slate-600 truncate max-w-[180px]">${k}</span><span class="font-mono font-medium text-slate-800">${v}</span>`;
+        container.appendChild(row);
+      }
+    }
+
+    // Run Prediction & XAI
+    async function runAnalysis(features, caseMeta) {
+      try {
+        document.getElementById('diagnosisBadge').textContent = 'Analyzing...';
+        const res = await fetch('/api/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ features: features })
+        });
+        if (!res.ok) throw new Error("Prediction API failed");
+        currentPayload = await res.json();
+
+        updateUI(currentPayload, caseMeta);
+      } catch (err) {
+        console.error(err);
+        alert("Failed to analyze patient sample: " + err.message);
+      }
+    }
+
+    // Update UI components with result
+    function updateUI(payload, caseMeta) {
+      const pred = payload.model_prediction;
+      
+      // 1. Diagnosis Badge
+      const badge = document.getElementById('diagnosisBadge');
+      if (pred.predicted_class_code === 1) {
+        badge.textContent = 'MALIGNANT';
+        badge.className = 'inline-flex items-center px-4 py-2 rounded-lg text-lg font-bold bg-rose-100 text-rose-800 border border-rose-300';
+      } else {
+        badge.textContent = 'BENIGN';
+        badge.className = 'inline-flex items-center px-4 py-2 rounded-lg text-lg font-bold bg-emerald-100 text-emerald-800 border border-emerald-300';
+      }
+
+      if (caseMeta) {
+        document.getElementById('actualDiagnosisText').textContent = `Ground Truth Biopsy: ${caseMeta.actual_diagnosis}`;
+      }
+
+      // 2. Probability Bar
+      const probPct = (pred.malignant_probability * 100).toFixed(1);
+      document.getElementById('probPercentText').textContent = `${probPct}%`;
+      document.getElementById('confidenceText').textContent = `Confidence: ${pred.confidence_percent.toFixed(1)}%`;
+      
+      const probBar = document.getElementById('probBar');
+      probBar.style.width = `${probPct}%`;
+      probBar.className = pred.predicted_class_code === 1 ? 'bg-rose-500 h-2.5 rounded-full transition-all duration-700' : 'bg-emerald-500 h-2.5 rounded-full transition-all duration-700';
+
+      // 3. Log-odds Margin
+      document.getElementById('baseLogOdds').textContent = pred.base_log_odds;
+      document.getElementById('sampleLogOdds').textContent = pred.sample_log_odds;
+
+      // 4. Render SHAP Chart
+      renderShapChart(payload.top_evidence.all_top_features_ranked);
+
+      // 5. Render RAG Guidelines
+      renderRAGGuidelines(payload.retrieved_clinical_literature_rag);
+
+      // 6. Render Explanation Text
+      document.getElementById('explanationText').innerHTML = formatMarkdown(payload.explanation);
+    }
+
+    // Render SHAP Horizontal Bar Chart
+    function renderShapChart(features) {
+      const ctx = document.getElementById('shapChart').getContext('2d');
+      const labels = features.slice(0, 8).map(f => f.feature_name);
+      const values = features.slice(0, 8).map(f => f.shap_value);
+      const backgroundColors = values.map(v => v > 0 ? 'rgba(239, 68, 68, 0.85)' : 'rgba(59, 130, 246, 0.85)');
+
+      if (shapChartInstance) shapChartInstance.destroy();
+
+      shapChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [{
+            label: 'SHAP Value (Log-Odds Impact)',
+            data: values,
+            backgroundColor: backgroundColors,
+            borderRadius: 4
+          }]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => ` Impact: ${ctx.parsed.x > 0 ? '+' : ''}${ctx.parsed.x.toFixed(3)} log-odds`
+              }
+            }
+          },
+          scales: {
+            x: {
+              title: { display: true, text: 'Log-Odds Contribution (Red: Malignant, Blue: Benign)', font: { size: 10 } }
+            }
+          }
+        }
+      });
+    }
+
+    // Render RAG Guidelines Cards
+    function renderRAGGuidelines(guidelines) {
+      const container = document.getElementById('ragGuidelinesContainer');
+      container.innerHTML = '';
+      if (!guidelines || guidelines.length === 0) {
+        container.innerHTML = '<p class="text-xs text-slate-400">No specific guidelines retrieved.</p>';
+        return;
+      }
+      guidelines.forEach(g => {
+        const card = document.createElement('div');
+        card.className = 'bg-slate-50 border border-slate-200 rounded-lg p-3.5 text-xs';
+        card.innerHTML = `
+          <div class="flex items-center space-x-2 text-blue-700 font-semibold mb-1">
+            <i data-lucide="bookmark" class="w-4 h-4"></i>
+            <span>${g.title || g.category}</span>
+          </div>
+          <p class="text-slate-700 leading-relaxed mb-2">${g.text}</p>
+          <div class="text-[11px] text-slate-400 font-medium">Source: ${g.source}</div>
+        `;
+        container.appendChild(card);
+      });
+      lucide.createIcons();
+    }
+
+    // Markdown simple formatter
+    function formatMarkdown(text) {
+      if (!text) return '';
+      return text
+        .replace(/^### (.*$)/gim, '<h3 class="font-bold text-sm text-slate-900 mt-2 mb-1">$1</h3>')
+        .replace(/^## (.*$)/gim, '<h2 class="font-bold text-base text-slate-900 mt-3 mb-1">$1</h2>')
+        .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
+        .replace(/\*(.*?)\*/gim, '<em>$1</em>')
+        .replace(/`([^`]+)`/gim, '<code class="bg-slate-200 text-slate-800 px-1 py-0.5 rounded text-[11px] font-mono">$1</code>')
+        .replace(/\n\n/gim, '<br><br>')
+        .replace(/\n/gim, '<br>');
+    }
+
+    // Event Listeners
+    document.getElementById('caseSelector').addEventListener('change', (e) => {
+      const idx = e.target.value;
+      if (idx !== '' && sampleCases[idx]) {
+        renderFeatureList(sampleCases[idx].features);
+      }
+    });
+
+    document.getElementById('btnRunDiagnosis').addEventListener('click', () => {
+      const idx = document.getElementById('caseSelector').value;
+      if (idx !== '' && sampleCases[idx]) {
+        runAnalysis(sampleCases[idx].features, sampleCases[idx]);
+      }
+    });
+
+    document.getElementById('btnRegenLLM').addEventListener('click', async () => {
+      if (!currentPayload) return;
+      document.getElementById('explanationText').innerHTML = '<p class="text-slate-400 italic">Calling Generative AI model...</p>';
+      try {
+        const res = await fetch('/api/explain', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ payload: currentPayload })
+        });
+        const data = await res.json();
+        document.getElementById('explanationText').innerHTML = formatMarkdown(data.explanation);
+      } catch (err) {
+        alert("LLM generation failed: " + err.message);
+      }
+    });
+
+    // Chat functionality
+    document.getElementById('btnSendChat').addEventListener('click', sendChatMessage);
+    document.getElementById('chatInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') sendChatMessage();
+    });
+
+    async function sendChatMessage() {
+      const input = document.getElementById('chatInput');
+      const query = input.value.trim();
+      if (!query || !currentPayload) return;
+
+      const chatBox = document.getElementById('chatMessages');
+      
+      // User message
+      const userBubble = document.createElement('div');
+      userBubble.className = 'bg-blue-600 text-white p-2.5 rounded-lg text-xs ml-auto max-w-md text-right';
+      userBubble.textContent = query;
+      chatBox.appendChild(userBubble);
+      input.value = '';
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      // Loading bubble
+      const loadingBubble = document.createElement('div');
+      loadingBubble.className = 'bg-slate-200 text-slate-600 p-2.5 rounded-lg text-xs max-w-md italic';
+      loadingBubble.textContent = 'Thinking...';
+      chatBox.appendChild(loadingBubble);
+      chatBox.scrollTop = chatBox.scrollHeight;
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            payload: currentPayload,
+            query: query,
+            history: chatHistory
+          })
+        });
+        const data = await res.json();
+        loadingBubble.remove();
+
+        const botBubble = document.createElement('div');
+        botBubble.className = 'bg-slate-200 text-slate-800 p-2.5 rounded-lg text-xs max-w-md';
+        botBubble.innerHTML = formatMarkdown(data.reply);
+        chatBox.appendChild(botBubble);
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        chatHistory.push({ role: 'user', content: query });
+        chatHistory.push({ role: 'assistant', content: data.reply });
+      } catch (err) {
+        loadingBubble.textContent = 'Error: ' + err.message;
+      }
+    }
+
+    // Load samples on page startup
+    loadSamples();
+  </script>
+</body>
+</html>

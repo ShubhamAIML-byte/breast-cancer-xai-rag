@@ -1,0 +1,58 @@
+{
+  "Accuracy": {
+    "Point Estimate": 0.9767441860465116,
+    "Bootstrap Mean": 0.9770465116279071,
+    "Std. Error": 0.016075282747699985,
+    "95% CI Lower": 0.9418604651162791,
+    "95% CI Upper": 1.0
+  },
+  "Precision": {
+    "Point Estimate": 1.0,
+    "Bootstrap Mean": 1.0,
+    "Std. Error": 0.0,
+    "95% CI Lower": 1.0,
+    "95% CI Upper": 1.0
+  },
+  "Recall (Sensitivity)": {
+    "Point Estimate": 0.9375,
+    "Bootstrap Mean": 0.9383125,
+    "Std. Error": 0.04320232238444374,
+    "95% CI Lower": 0.84375,
+    "95% CI Upper": 1.0
+  },
+  "Specificity": {
+    "Point Estimate": 1.0,
+    "Bootstrap Mean": 1.0,
+    "Std. Error": 0.0,
+    "95% CI Lower": 1.0,
+    "95% CI Upper": 1.0
+  },
+  "F1-Score": {
+    "Point Estimate": 0.967741935483871,
+    "Bootstrap Mean": 0.9676537681540368,
+    "Std. Error": 0.023406066727636052,
+    "95% CI Lower": 0.9152542372881356,
+    "95% CI Upper": 1.0
+  },
+  "ROC-AUC": {
+    "Point Estimate": 1.0,
+    "Bootstrap Mean": 1.0,
+    "Std. Error": 2.6980717301560517e-17,
+    "95% CI Lower": 0.9999999999999999,
+    "95% CI Upper": 1.0
+  },
+  "MCC": {
+    "Point Estimate": 0.9507985365695811,
+    "Bootstrap Mean": 0.9516588933939565,
+    "Std. Error": 0.03353595459377072,
+    "95% CI Lower": 0.8787751491205611,
+    "95% CI Upper": 1.0
+  },
+  "Cohen's Kappa": {
+    "Point Estimate": 0.9495896834701055,
+    "Bootstrap Mean": 0.9499372027625884,
+    "Std. Error": 0.03551189427384812,
+    "95% CI Lower": 0.8714883442916915,
+    "95% CI Upper": 1.0
+  }
+}
