@@ -167,6 +167,7 @@ def generate_template_explanation(payload: Dict[str, Any]) -> str:
 @app.get("/")
 @app.get("/api")
 @app.get("/api/health")
+@app.get("/health")
 def healthcheck():
     load_model_data()
     return {
@@ -177,6 +178,7 @@ def healthcheck():
     }
 
 @app.get("/api/samples")
+@app.get("/samples")
 def get_sample_cases():
     samples_path = os.path.join(BASE_DIR, "data", "test_samples.json")
     if os.path.exists(samples_path):
@@ -185,6 +187,7 @@ def get_sample_cases():
     return []
 
 @app.post("/api/predict")
+@app.post("/predict")
 def predict_and_explain(req: PredictRequest):
     load_model_data()
     margin, prob, contribs, base_margin = evaluate_xgboost_trees(req.features)
@@ -237,6 +240,7 @@ def predict_and_explain(req: PredictRequest):
     return payload
 
 @app.post("/api/explain")
+@app.post("/explain")
 def generate_llm_explanation(req: ExplainRequest):
     payload = req.payload
     api_key = os.environ.get("OPENAI_API_KEY", "")
@@ -261,6 +265,7 @@ def generate_llm_explanation(req: ExplainRequest):
         return {"explanation": generate_template_explanation(payload), "mode": f"Fallback (API Error: {str(e)})"}
 
 @app.post("/api/chat")
+@app.post("/chat")
 def chat_followup(req: ChatRequest):
     api_key = os.environ.get("OPENAI_API_KEY", "")
     payload = req.payload
